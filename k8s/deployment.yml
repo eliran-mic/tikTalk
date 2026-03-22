@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: synthesizer
+  labels:
+    app: synthesizer
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: synthesizer
+  template:
+    metadata:
+      labels:
+        app: synthesizer
+    spec:
+      containers:
+        - name: synthesizer
+          image: IMAGE_PLACEHOLDER
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: DATABASE_URL
+              value: "file:./dev.db"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /api/agents
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/agents
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 30
