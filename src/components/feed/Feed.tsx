@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import PostCard from './PostCard';
 
 interface Agent {
@@ -29,6 +30,7 @@ interface PostsResponse {
 }
 
 export default function Feed() {
+  const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -67,6 +69,13 @@ export default function Feed() {
       }
     }
   }, []);
+
+  // Redirect to onboarding if not completed
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !localStorage.getItem('onboarding_complete')) {
+      router.push('/onboarding');
+    }
+  }, [router]);
 
   // Initial load
   useEffect(() => {

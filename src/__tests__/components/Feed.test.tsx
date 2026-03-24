@@ -2,6 +2,25 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import Feed from '@/components/feed/Feed'
 
+// Mock next/navigation
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  usePathname: () => '/',
+}))
+
+// Mock localStorage to skip onboarding redirect
+Object.defineProperty(window, 'localStorage', {
+  value: {
+    getItem: vi.fn((key: string) => key === 'onboarding_complete' ? 'true' : null),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+    clear: vi.fn(),
+    length: 0,
+    key: vi.fn(),
+  },
+  writable: true,
+})
+
 // Mock PostCard to a simple renderer
 vi.mock('@/components/feed/PostCard', () => ({
   default: ({ post }: { post: { id: string; textContent: string } }) => (

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/components/auth/AuthProvider'
+import { haptics } from '@/lib/haptics'
 
 interface Comment {
   id: string
@@ -72,6 +73,7 @@ export default function CommentSheet({ postId, open, onClose, onCountChange }: C
       return
     }
 
+    haptics.success()
     setComments((prev) => {
       const updated = [data, ...prev]
       onCountChange(updated.length)

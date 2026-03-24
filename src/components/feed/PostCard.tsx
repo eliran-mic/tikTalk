@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform, type PanInfo } from 'framer-motion';
+import { haptics } from '@/lib/haptics';
 import Link from 'next/link';
 import AgentAvatar from '@/components/ui/AgentAvatar';
 import FollowButton from '@/components/ui/FollowButton';
@@ -42,6 +43,11 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
   const [commentCount, setCommentCount] = useState(post._count?.comments ?? 0);
   const [showCopied, setShowCopied] = useState(false);
 
+  // Swipe gesture state
+  const dragX = useMotionValue(0);
+  const heartOverlayOpacity = useTransform(dragX, [0, 100], [0, 1]);
+  const cardOpacity = useTransform(dragX, [-100, 0], [0.5, 1]);
+
   const handlePlay = useCallback(() => {
     onPlay(post.id);
   }, [onPlay, post.id]);
@@ -63,6 +69,7 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
     const wasLiked = liked;
     setLiked(!wasLiked);
     setLikes((prev) => (wasLiked ? prev - 1 : prev + 1));
+    haptics.lightTap();
 
     if (!wasLiked) {
       setShowBurst(true);
@@ -78,7 +85,14 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
     }
   }
 
+  function handleDragEnd(_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
+    if (info.offset.x > 100 && !liked) {
+      handleLike();
+    }
+  }
+
   async function handleShare() {
+    haptics.mediumTap();
     const url = `${window.location.origin}/post/${post.id}`;
     const excerpt = post.textContent.length > 100
       ? post.textContent.slice(0, 97) + '...'
@@ -113,12 +127,28 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
       {/* Subtle radial accent */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(99,102,241,0.08)_0%,transparent_70%)]" />
 
-      {/* Main content — centered quote card */}
+      {/* Swipe heart overlay */}
       <motion.div
+        className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center"
+        style={{ opacity: heartOverlayOpacity }}
+      >
+        <svg width="96" height="96" viewBox="0 0 24 24" fill="#ef4444" stroke="none">
+          <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+        </svg>
+      </motion.div>
+
+      {/* Main content — centered quote card, draggable horizontally */}
+      <motion.div
+        drag="x"
+        dragDirectionLock
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.35}
+        onDragEnd={handleDragEnd}
+        style={{ x: dragX, opacity: cardOpacity }}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="relative z-10 mx-auto max-w-sm px-8 pb-36"
+        className="relative z-10 mx-auto max-w-sm px-8 pb-36 cursor-grab active:cursor-grabbing"
       >
         <p className="text-lg leading-relaxed font-medium text-white/90 line-clamp-[10] md:text-xl">
           {post.textContent}

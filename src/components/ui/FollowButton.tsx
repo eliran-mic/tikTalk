@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { haptics } from '@/lib/haptics';
 
 interface FollowButtonProps {
   agentId: string;
@@ -39,6 +40,7 @@ export default function FollowButton({ agentId, size = 'md' }: FollowButtonProps
 
   async function handleToggle() {
     if (!user) return;
+    haptics.mediumTap();
 
     const wasFollowing = following;
     setFollowing(!wasFollowing);

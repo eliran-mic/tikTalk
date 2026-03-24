@@ -27,6 +27,16 @@ vi.mock('framer-motion', () => {
       },
     }),
     AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
+    useMotionValue: (initial: number) => ({
+      get: () => initial,
+      set: () => {},
+      on: () => () => {},
+    }),
+    useTransform: () => ({
+      get: () => 0,
+      set: () => {},
+      on: () => () => {},
+    }),
   }
 })
 
@@ -38,6 +48,16 @@ vi.mock('@/hooks/useTextToSpeech', () => ({
     toggle: vi.fn(),
     stop: vi.fn(),
   }),
+}))
+
+// Mock haptics
+vi.mock('@/lib/haptics', () => ({
+  haptics: { lightTap: vi.fn(), mediumTap: vi.fn(), success: vi.fn() },
+}))
+
+// Mock next/link
+vi.mock('next/link', () => ({
+  default: ({ children, href }: { children: React.ReactNode; href: string }) => <a href={href}>{children}</a>,
 }))
 
 // Mock FollowButton
