@@ -6,7 +6,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# Generate Prisma client and seed database
+# Generate Prisma client
 FROM base AS prisma
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
@@ -14,13 +14,8 @@ COPY package.json package-lock.json ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./
 COPY src/generated ./src/generated
-COPY scripts ./scripts
-COPY src/lib ./src/lib
 COPY tsconfig.json ./
 RUN npx prisma generate
-RUN npx prisma db push
-RUN npx tsx prisma/seed.ts
-RUN npx tsx scripts/generate_content.ts
 
 # Build the application
 FROM base AS builder
@@ -28,7 +23,6 @@ WORKDIR /app
 COPY --from=prisma /app/node_modules ./node_modules
 COPY --from=prisma /app/src/generated ./src/generated
 COPY . .
-COPY --from=prisma /app/dev.db ./dev.db
 RUN npm run build
 
 # Production image
@@ -43,8 +37,10 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/dev.db ./dev.db
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
+COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
 USER nextjs
 EXPOSE 3000

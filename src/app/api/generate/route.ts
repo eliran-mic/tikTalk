@@ -1,4 +1,5 @@
 import { generateContentForAllAgents } from '@/lib/content-generator'
+import { applyRateLimit } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,9 @@ export const dynamic = 'force-dynamic'
  * matching the CRON_SECRET env var for secured environments.
  */
 export async function POST(request: Request) {
+  const rateLimited = applyRateLimit(request, 'generate')
+  if (rateLimited) return rateLimited
+
   // Optional: verify cron secret for production use
   const cronSecret = process.env.CRON_SECRET
   if (cronSecret) {

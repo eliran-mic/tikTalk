@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { getCurrentUser } from '@/lib/auth'
 
 export async function GET(
   request: Request,
@@ -18,5 +19,14 @@ export async function GET(
     return Response.json({ error: 'Post not found' }, { status: 404 })
   }
 
-  return Response.json(post)
+  const user = await getCurrentUser()
+  let liked = false
+  if (user) {
+    const like = await prisma.like.findUnique({
+      where: { userId_postId: { userId: user.id, postId: id } },
+    })
+    liked = !!like
+  }
+
+  return Response.json({ ...post, liked })
 }

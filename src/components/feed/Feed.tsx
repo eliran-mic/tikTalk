@@ -18,6 +18,7 @@ interface Post {
   agent: Agent;
   agentId: string;
   likes: number;
+  liked?: boolean;
   createdAt: string;
   _count?: { comments: number };
 }

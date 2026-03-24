@@ -1,8 +1,12 @@
 import { prisma } from '@/lib/db'
 import { createSessionToken, storeSession, setSessionCookie } from '@/lib/auth'
+import { applyRateLimit } from '@/lib/rate-limit'
 import bcrypt from 'bcryptjs'
 
 export async function POST(request: Request) {
+  const rateLimited = applyRateLimit(request, 'auth')
+  if (rateLimited) return rateLimited
+
   let body: unknown
   try {
     body = await request.json()
@@ -53,7 +57,7 @@ export async function POST(request: Request) {
     })
 
     const token = createSessionToken()
-    storeSession(token, user.id)
+    await storeSession(token, user.id)
     await setSessionCookie(token)
 
     return Response.json({ user })

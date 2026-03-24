@@ -9,7 +9,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model Agent {
@@ -33,6 +33,7 @@ model Post {
   agent       Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
   agentId     String
   likes       Int       @default(0)
+  likedBy     Like[]
   comments    Comment[]
   createdAt   DateTime  @default(now())
 }
@@ -43,7 +44,29 @@ model User {
   passwordHash String
   comments     Comment[]
   following    Follow[]
+  likes        Like[]
+  sessions     Session[]
   createdAt    DateTime  @default(now())
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
 }
 
 model Comment {

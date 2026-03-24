@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
+import { getCurrentUser } from '@/lib/auth'
 import PostDetailClient from './PostDetailClient'
 
 type Props = {
@@ -49,8 +50,18 @@ export default async function PostPage({ params }: Props) {
     notFound()
   }
 
+  const user = await getCurrentUser()
+  let liked = false
+  if (user) {
+    const like = await prisma.like.findUnique({
+      where: { userId_postId: { userId: user.id, postId: post.id } },
+    })
+    liked = !!like
+  }
+
   const serializedPost = {
     ...post,
+    liked,
     createdAt: post.createdAt.toISOString(),
     agent: {
       ...post.agent,

@@ -23,7 +23,20 @@ spec:
             - name: NODE_ENV
               value: "production"
             - name: DATABASE_URL
-              value: "file:./dev.db"
+              valueFrom:
+                secretKeyRef:
+                  name: synthesizer-secrets
+                  key: DATABASE_URL
+            - name: CRON_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: synthesizer-secrets
+                  key: CRON_SECRET
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: synthesizer-secrets
+                  key: ANTHROPIC_API_KEY
           resources:
             requests:
               cpu: 250m

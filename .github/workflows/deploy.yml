@@ -50,4 +50,19 @@ jobs:
         run: |
           IMAGE_TAG=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}/${{ env.IMAGE }}:${{ github.sha }}
           sed -i "s|IMAGE_PLACEHOLDER|$IMAGE_TAG|g" k8s/deployment.yml
-          kubectl apply -f k8s/
+
+          # 1. Secrets first (other resources depend on them)
+          kubectl apply -f k8s/secrets.yml
+
+          # 2. Postgres (app depends on it)
+          kubectl apply -f k8s/postgres.yml
+          kubectl rollout status statefulset/postgres --timeout=120s
+
+          # 3. App deployment and ClusterIP service
+          kubectl apply -f k8s/deployment.yml
+          kubectl apply -f k8s/service.yml
+
+          # 4. Gateway infrastructure
+          kubectl apply -f k8s/cert-manager.yml
+          kubectl apply -f k8s/gateway.yml
+          kubectl apply -f k8s/rate-limit.yml

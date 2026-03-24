@@ -23,6 +23,7 @@ interface Post {
   agent: Agent;
   agentId: string;
   likes: number;
+  liked?: boolean;
   createdAt: string;
   _count?: { comments: number };
 }
@@ -35,7 +36,7 @@ interface PostCardProps {
 
 export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
   const [likes, setLikes] = useState(post.likes);
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(post.liked ?? false);
   const [showBurst, setShowBurst] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentCount, setCommentCount] = useState(post._count?.comments ?? 0);

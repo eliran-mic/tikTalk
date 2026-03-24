@@ -5,32 +5,34 @@ import crypto from 'crypto'
 const SESSION_COOKIE = 'session_token'
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7 // 7 days in seconds
 
-// Simple in-memory session store. For production, use a database or Redis.
-const sessions = new Map<string, { userId: string; expiresAt: number }>()
-
 export function createSessionToken(): string {
   return crypto.randomBytes(32).toString('hex')
 }
 
-export function storeSession(token: string, userId: string) {
-  sessions.set(token, {
-    userId,
-    expiresAt: Date.now() + SESSION_MAX_AGE * 1000,
+export async function storeSession(token: string, userId: string) {
+  await prisma.session.create({
+    data: {
+      token,
+      userId,
+      expiresAt: new Date(Date.now() + SESSION_MAX_AGE * 1000),
+    },
   })
 }
 
-export function getSessionData(token: string) {
-  const session = sessions.get(token)
+export async function getSessionData(token: string) {
+  const session = await prisma.session.findUnique({
+    where: { token },
+  })
   if (!session) return null
-  if (Date.now() > session.expiresAt) {
-    sessions.delete(token)
+  if (new Date() > session.expiresAt) {
+    await prisma.session.delete({ where: { id: session.id } })
     return null
   }
-  return session
+  return { userId: session.userId, expiresAt: session.expiresAt.getTime() }
 }
 
-export function deleteSession(token: string) {
-  sessions.delete(token)
+export async function deleteSession(token: string) {
+  await prisma.session.deleteMany({ where: { token } })
 }
 
 export async function setSessionCookie(token: string) {
@@ -54,7 +56,7 @@ export async function getCurrentUser() {
   const sessionCookie = cookieStore.get(SESSION_COOKIE)
   if (!sessionCookie) return null
 
-  const session = getSessionData(sessionCookie.value)
+  const session = await getSessionData(sessionCookie.value)
   if (!session) return null
 
   const user = await prisma.user.findUnique({

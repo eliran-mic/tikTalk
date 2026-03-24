@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
+import { applyRateLimit } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
@@ -7,6 +8,9 @@ export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const rateLimited = applyRateLimit(_request, 'general')
+  if (rateLimited) return rateLimited
+
   const { id: agentId } = await params
   const user = await getCurrentUser()
 
@@ -38,6 +42,9 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const rateLimited = applyRateLimit(_request, 'general')
+  if (rateLimited) return rateLimited
+
   const { id: agentId } = await params
   const user = await getCurrentUser()
 

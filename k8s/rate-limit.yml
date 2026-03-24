@@ -1,0 +1,16 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: synthesizer-rate-limit
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: synthesizer-route
+  rateLimit:
+    type: Global
+    global:
+      rules:
+        - limit:
+            requests: 100
+            unit: Minute

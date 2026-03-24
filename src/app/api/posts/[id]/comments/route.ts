@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
+import { applyRateLimit } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,9 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const rateLimited = applyRateLimit(request, 'general')
+  if (rateLimited) return rateLimited
+
   const { id } = await params
   const user = await getCurrentUser()
 

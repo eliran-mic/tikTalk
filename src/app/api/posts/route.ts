@@ -70,8 +70,22 @@ export async function GET(request: Request) {
     ? String(startIndex + limit)
     : null
 
-  // Strip _score from response
-  const posts = page.map(({ _score, ...post }) => post)
+  // Get liked post IDs for the current user
+  let likedPostIds = new Set<string>()
+  if (user) {
+    const postIds = page.map((p) => p.id)
+    const likes = await prisma.like.findMany({
+      where: { userId: user.id, postId: { in: postIds } },
+      select: { postId: true },
+    })
+    likedPostIds = new Set(likes.map((l) => l.postId))
+  }
+
+  // Strip _score from response and add liked state
+  const posts = page.map(({ _score, ...post }) => ({
+    ...post,
+    liked: likedPostIds.has(post.id),
+  }))
 
   return Response.json({
     posts,
