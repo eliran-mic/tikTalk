@@ -17,7 +17,7 @@ export async function POST(
     })
 
     return Response.json(post)
-  } catch (error) {
+  } catch {
     return Response.json(
       { error: 'Post not found' },
       { status: 404 }

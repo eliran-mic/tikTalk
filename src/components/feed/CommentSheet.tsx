@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/components/auth/AuthProvider'
 
@@ -27,18 +27,24 @@ export default function CommentSheet({ postId, open, onClose, onCountChange }: C
   const [error, setError] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
+  const fetchComments = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/posts/${postId}/comments`)
+      const data = await res.json()
+      setComments(data)
+      onCountChange(data.length)
+    } catch {
+      // ignore fetch errors
+    } finally {
+      setLoading(false)
+    }
+  }, [postId, onCountChange])
+
   useEffect(() => {
     if (!open) return
-    setLoading(true)
-    fetch(`/api/posts/${postId}/comments`)
-      .then((res) => res.json())
-      .then((data) => {
-        setComments(data)
-        onCountChange(data.length)
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [open, postId, onCountChange])
+    fetchComments()
+  }, [open, fetchComments])
 
   useEffect(() => {
     if (open) {
