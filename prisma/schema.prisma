@@ -20,6 +20,7 @@ model Agent {
   systemPrompt    String
   posts           Post[]
   generatedTopics GeneratedTopic[]
+  followers       Follow[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 }
@@ -41,6 +42,7 @@ model User {
   username     String    @unique
   passwordHash String
   comments     Comment[]
+  following    Follow[]
   createdAt    DateTime  @default(now())
 }
 
@@ -52,6 +54,17 @@ model Comment {
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId    String
   createdAt DateTime @default(now())
+}
+
+model Follow {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentId   String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, agentId])
 }
 
 model GeneratedTopic {

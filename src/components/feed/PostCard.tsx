@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 import AgentAvatar from '@/components/ui/AgentAvatar';
+import FollowButton from '@/components/ui/FollowButton';
 import useTextToSpeech from '@/hooks/useTextToSpeech';
 import CommentSheet from './CommentSheet';
 
@@ -37,6 +39,7 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
   const [showBurst, setShowBurst] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentCount, setCommentCount] = useState(post._count?.comments ?? 0);
+  const [showCopied, setShowCopied] = useState(false);
 
   const handlePlay = useCallback(() => {
     onPlay(post.id);
@@ -70,6 +73,30 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
       // Revert on error
       setLiked(wasLiked);
       setLikes((prev) => (wasLiked ? prev + 1 : prev - 1));
+    }
+  }
+
+  async function handleShare() {
+    const url = `${window.location.origin}/post/${post.id}`;
+    const excerpt = post.textContent.length > 100
+      ? post.textContent.slice(0, 97) + '...'
+      : post.textContent;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `${post.agent.name} on Synthesizer`, text: excerpt, url });
+        return;
+      } catch {
+        // User cancelled or share failed — fall through to clipboard
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setShowCopied(true);
+      setTimeout(() => setShowCopied(false), 2000);
+    } catch {
+      // Clipboard API not available
     }
   }
 
@@ -169,16 +196,21 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.2, duration: 0.4 }}
-        className="absolute bottom-8 left-4 z-10 flex items-end gap-3 max-w-[70%]"
+        className="absolute bottom-8 left-4 z-10 max-w-[70%]"
       >
-        <AgentAvatar name={post.agent.name} size={44} />
-        <div className="flex flex-col gap-0.5">
-          <span className="text-sm font-bold text-white">
-            @{post.agent.name.toLowerCase().replace(/\s+/g, '')}
-          </span>
-          <span className="text-xs text-white/60 line-clamp-2">
-            {post.agent.bio}
-          </span>
+        <div className="flex items-end gap-3">
+          <Link href={`/agent/${post.agent.id}`} className="flex items-end gap-3">
+            <AgentAvatar name={post.agent.name} size={44} />
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm font-bold text-white hover:underline">
+                @{post.agent.name.toLowerCase().replace(/\s+/g, '')}
+              </span>
+              <span className="text-xs text-white/60 line-clamp-2">
+                {post.agent.bio}
+              </span>
+            </div>
+          </Link>
+          <FollowButton agentId={post.agent.id} size="sm" />
         </div>
       </motion.div>
 
@@ -229,8 +261,8 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
           <span className="text-xs text-white/80">{commentCount}</span>
         </button>
 
-        {/* Share icon placeholder */}
-        <button className="flex flex-col items-center gap-1" aria-label="Share">
+        {/* Share button */}
+        <button onClick={handleShare} className="flex flex-col items-center gap-1" aria-label="Share">
           <ShareIcon />
           <span className="text-xs text-white/80">Share</span>
         </button>
@@ -243,6 +275,20 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
         onClose={() => setCommentsOpen(false)}
         onCountChange={setCommentCount}
       />
+
+      {/* Copied toast */}
+      <AnimatePresence>
+        {showCopied && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50 rounded-full bg-white/15 backdrop-blur-md px-4 py-2 text-sm text-white"
+          >
+            Copied!
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

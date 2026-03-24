@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import PostCard from './PostCard';
 
 interface Agent {
@@ -22,28 +22,76 @@ interface Post {
   _count?: { comments: number };
 }
 
+interface PostsResponse {
+  posts: Post[];
+  nextCursor: string | null;
+}
+
 export default function Feed() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activePostId, setActivePostId] = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    async function fetchPosts() {
-      try {
-        const res = await fetch('/api/posts');
-        if (!res.ok) throw new Error('Failed to fetch posts');
-        const data: Post[] = await res.json();
-        setPosts(data);
-      } catch (err) {
+  const fetchPosts = useCallback(async (cursor?: string) => {
+    const isLoadMore = !!cursor;
+    if (isLoadMore) {
+      setLoadingMore(true);
+    }
+
+    try {
+      const url = cursor ? `/api/posts?cursor=${cursor}` : '/api/posts';
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Failed to fetch posts');
+      const data: PostsResponse = await res.json();
+
+      if (isLoadMore) {
+        setPosts((prev) => [...prev, ...data.posts]);
+      } else {
+        setPosts(data.posts);
+      }
+      setNextCursor(data.nextCursor);
+    } catch (err) {
+      if (!isLoadMore) {
         setError(err instanceof Error ? err.message : 'Something went wrong');
-      } finally {
+      }
+    } finally {
+      if (isLoadMore) {
+        setLoadingMore(false);
+      } else {
         setLoading(false);
       }
     }
-
-    fetchPosts();
   }, []);
+
+  // Initial load
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
+
+  // Infinite scroll: load more when user scrolls near the end
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    function handleScroll() {
+      if (!el || loadingMore || !nextCursor) return;
+
+      // Trigger when within 2 viewport heights of the bottom
+      const threshold = window.innerHeight * 2;
+      const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+
+      if (distanceToBottom < threshold) {
+        fetchPosts(nextCursor);
+      }
+    }
+
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, [loadingMore, nextCursor, fetchPosts]);
 
   const handlePostPlay = useCallback((postId: string) => {
     setActivePostId(postId);
@@ -78,6 +126,7 @@ export default function Feed() {
 
   return (
     <div
+      ref={scrollRef}
       className="hide-scrollbar h-dvh w-full overflow-y-scroll bg-black"
       style={{ scrollSnapType: 'y mandatory' }}
     >
@@ -89,6 +138,11 @@ export default function Feed() {
           onPlay={handlePostPlay}
         />
       ))}
+      {loadingMore && (
+        <div className="flex items-center justify-center py-8" style={{ scrollSnapAlign: 'start' }}>
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+        </div>
+      )}
     </div>
   );
 }
