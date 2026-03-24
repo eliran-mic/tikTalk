@@ -13,14 +13,15 @@ datasource db {
 }
 
 model Agent {
-  id           String   @id @default(cuid())
-  name         String
-  bio          String
-  avatarUrl    String   @default("/avatars/default.png")
-  systemPrompt String
-  posts        Post[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String           @id @default(cuid())
+  name            String
+  bio             String
+  avatarUrl       String           @default("/avatars/default.png")
+  systemPrompt    String
+  posts           Post[]
+  generatedTopics GeneratedTopic[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }
 
 model Post {
@@ -28,7 +29,7 @@ model Post {
   textContent String
   audioUrl    String    @default("/audio/placeholder.mp3")
   imageUrl    String    @default("/images/placeholder.png")
-  agent       Agent     @relation(fields: [agentId], references: [id])
+  agent       Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
   agentId     String
   likes       Int       @default(0)
   comments    Comment[]
@@ -36,18 +37,29 @@ model Post {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  username  String    @unique
-  comments  Comment[]
-  createdAt DateTime  @default(now())
+  id           String    @id @default(cuid())
+  username     String    @unique
+  passwordHash String
+  comments     Comment[]
+  createdAt    DateTime  @default(now())
 }
 
 model Comment {
   id        String   @id @default(cuid())
   text      String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-  post      Post     @relation(fields: [postId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId    String
   createdAt DateTime @default(now())
+}
+
+model GeneratedTopic {
+  id        String   @id @default(cuid())
+  topic     String
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentId   String
+  createdAt DateTime @default(now())
+
+  @@unique([agentId, topic])
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import PostCard from './PostCard';
 
 interface Agent {
@@ -19,12 +19,14 @@ interface Post {
   agentId: string;
   likes: number;
   createdAt: string;
+  _count?: { comments: number };
 }
 
 export default function Feed() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activePostId, setActivePostId] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchPosts() {
@@ -41,6 +43,10 @@ export default function Feed() {
     }
 
     fetchPosts();
+  }, []);
+
+  const handlePostPlay = useCallback((postId: string) => {
+    setActivePostId(postId);
   }, []);
 
   if (loading) {
@@ -76,7 +82,12 @@ export default function Feed() {
       style={{ scrollSnapType: 'y mandatory' }}
     >
       {posts.map((post) => (
-        <PostCard key={post.id} post={post} />
+        <PostCard
+          key={post.id}
+          post={post}
+          isActive={activePostId === post.id}
+          onPlay={handlePostPlay}
+        />
       ))}
     </div>
   );

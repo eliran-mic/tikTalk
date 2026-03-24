@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AgentAvatar from '@/components/ui/AgentAvatar';
+import useTextToSpeech from '@/hooks/useTextToSpeech';
+import CommentSheet from './CommentSheet';
 
 interface Agent {
   id: string;
@@ -20,16 +22,37 @@ interface Post {
   agentId: string;
   likes: number;
   createdAt: string;
+  _count?: { comments: number };
 }
 
 interface PostCardProps {
   post: Post;
+  isActive: boolean;
+  onPlay: (postId: string) => void;
 }
 
-export default function PostCard({ post }: PostCardProps) {
+export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
   const [likes, setLikes] = useState(post.likes);
   const [liked, setLiked] = useState(false);
   const [showBurst, setShowBurst] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentCount, setCommentCount] = useState(post._count?.comments ?? 0);
+
+  const handlePlay = useCallback(() => {
+    onPlay(post.id);
+  }, [onPlay, post.id]);
+
+  const { isPlaying, progress, toggle, stop } = useTextToSpeech({
+    text: post.textContent,
+    onPlay: handlePlay,
+  });
+
+  // When another post becomes active, stop this one
+  useEffect(() => {
+    if (!isActive && isPlaying) {
+      stop();
+    }
+  }, [isActive, isPlaying, stop]);
 
   async function handleLike() {
     const wasLiked = liked;
@@ -73,24 +96,73 @@ export default function PostCard({ post }: PostCardProps) {
         </p>
       </motion.div>
 
-      {/* Play button placeholder */}
-      <motion.button
+      {/* Play/Pause button with waveform */}
+      <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.3, duration: 0.3 }}
-        className="absolute bottom-44 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-14 h-14 rounded-full bg-white/10 backdrop-blur-md border border-white/20"
-        aria-label="Play audio (coming soon)"
+        className="absolute bottom-44 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-3"
       >
-        <svg
-          width="20"
-          height="24"
-          viewBox="0 0 20 24"
-          fill="none"
-          className="ml-1"
+        <button
+          onClick={toggle}
+          className="relative flex items-center justify-center w-14 h-14 rounded-full bg-white/10 backdrop-blur-md border border-white/20 transition-colors hover:bg-white/15"
+          aria-label={isPlaying ? 'Pause audio' : 'Play audio'}
         >
-          <path d="M0 0L20 12L0 24V0Z" fill="white" fillOpacity={0.8} />
-        </svg>
-      </motion.button>
+          <AnimatePresence mode="wait">
+            {isPlaying ? (
+              <motion.div
+                key="waveform"
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5 }}
+                transition={{ duration: 0.15 }}
+                className="flex items-center gap-[3px]"
+              >
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <motion.span
+                    key={i}
+                    className="w-[3px] rounded-full bg-white/80"
+                    animate={{
+                      height: [8, 18, 10, 20, 8],
+                    }}
+                    transition={{
+                      duration: 0.8,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                      delay: i * 0.12,
+                    }}
+                  />
+                ))}
+              </motion.div>
+            ) : (
+              <motion.svg
+                key="play"
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5 }}
+                transition={{ duration: 0.15 }}
+                width="20"
+                height="24"
+                viewBox="0 0 20 24"
+                fill="none"
+                className="ml-1"
+              >
+                <path d="M0 0L20 12L0 24V0Z" fill="white" fillOpacity={0.8} />
+              </motion.svg>
+            )}
+          </AnimatePresence>
+        </button>
+
+        {/* Progress bar */}
+        <div className="w-32 h-1 rounded-full bg-white/10 overflow-hidden">
+          <motion.div
+            className="h-full rounded-full bg-indigo-400/70"
+            initial={{ width: '0%' }}
+            animate={{ width: `${progress * 100}%` }}
+            transition={{ duration: 0.1, ease: 'linear' }}
+          />
+        </div>
+      </motion.div>
 
       {/* Bottom-left: Agent info */}
       <motion.div
@@ -147,10 +219,14 @@ export default function PostCard({ post }: PostCardProps) {
           <span className="text-xs text-white/80">{likes}</span>
         </button>
 
-        {/* Comment icon placeholder */}
-        <button className="flex flex-col items-center gap-1" aria-label="Comments">
+        {/* Comment button */}
+        <button
+          onClick={() => setCommentsOpen(true)}
+          className="flex flex-col items-center gap-1"
+          aria-label="Comments"
+        >
           <CommentIcon />
-          <span className="text-xs text-white/80">0</span>
+          <span className="text-xs text-white/80">{commentCount}</span>
         </button>
 
         {/* Share icon placeholder */}
@@ -159,6 +235,14 @@ export default function PostCard({ post }: PostCardProps) {
           <span className="text-xs text-white/80">Share</span>
         </button>
       </motion.div>
+
+      {/* Comment sheet */}
+      <CommentSheet
+        postId={post.id}
+        open={commentsOpen}
+        onClose={() => setCommentsOpen(false)}
+        onCountChange={setCommentCount}
+      />
     </div>
   );
 }
