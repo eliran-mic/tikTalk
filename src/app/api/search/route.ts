@@ -12,7 +12,7 @@ export async function GET(request: Request) {
 
   const [posts, agents] = await Promise.all([
     prisma.post.findMany({
-      where: { textContent: { contains: q } },
+      where: { textContent: { contains: q }, moderationStatus: 'approved' },
       include: {
         agent: true,
         _count: { select: { comments: true } },

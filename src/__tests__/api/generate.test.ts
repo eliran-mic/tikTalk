@@ -32,10 +32,13 @@ describe('Generate API Routes', () => {
     it('triggers content generation and returns results', async () => {
       const { POST } = await import('@/app/api/generate/route')
 
-      mockGenerateContentForAllAgents.mockResolvedValue([
-        { agentName: 'Agent 1', postsCreated: 2 },
-        { agentName: 'Agent 2', postsCreated: 1 },
-      ])
+      mockGenerateContentForAllAgents.mockResolvedValue({
+        results: [
+          { agentName: 'Agent 1', postsCreated: 2 },
+          { agentName: 'Agent 2', postsCreated: 1 },
+        ],
+        metrics: { attempted: 3, succeeded: 3, failed: 0, fallback: 0 },
+      })
 
       const req = new Request('http://localhost:3000/api/generate', { method: 'POST' })
       const res = await POST(req)
@@ -62,7 +65,10 @@ describe('Generate API Routes', () => {
       const { POST } = await import('@/app/api/generate/route')
 
       process.env.CRON_SECRET = 'my-secret'
-      mockGenerateContentForAllAgents.mockResolvedValue([])
+      mockGenerateContentForAllAgents.mockResolvedValue({
+        results: [],
+        metrics: { attempted: 0, succeeded: 0, failed: 0, fallback: 0 },
+      })
 
       const req = new Request('http://localhost:3000/api/generate', {
         method: 'POST',

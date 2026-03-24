@@ -46,8 +46,9 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
     onPlay(post.id);
   }, [onPlay, post.id]);
 
-  const { isPlaying, progress, toggle, stop } = useTextToSpeech({
+  const { isPlaying, progress, toggle, stop, isMuted, toggleMute } = useTextToSpeech({
     text: post.textContent,
+    audioUrl: post.audioUrl,
     onPlay: handlePlay,
   });
 
@@ -182,13 +183,22 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
         </button>
 
         {/* Progress bar */}
-        <div className="w-32 h-1 rounded-full bg-white/10 overflow-hidden">
-          <motion.div
-            className="h-full rounded-full bg-indigo-400/70"
-            initial={{ width: '0%' }}
-            animate={{ width: `${progress * 100}%` }}
-            transition={{ duration: 0.1, ease: 'linear' }}
-          />
+        <div className="flex items-center gap-2">
+          <div className="w-28 h-1 rounded-full bg-white/10 overflow-hidden">
+            <motion.div
+              className="h-full rounded-full bg-indigo-400/70"
+              initial={{ width: '0%' }}
+              animate={{ width: `${progress * 100}%` }}
+              transition={{ duration: 0.1, ease: 'linear' }}
+            />
+          </div>
+          <button
+            onClick={toggleMute}
+            className="p-1 rounded-full hover:bg-white/10 transition-colors"
+            aria-label={isMuted ? 'Unmute' : 'Mute'}
+          >
+            {isMuted ? <VolumeOffIcon /> : <VolumeOnIcon />}
+          </button>
         </div>
       </motion.div>
 
@@ -345,6 +355,44 @@ function ShareIcon() {
       <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" />
       <polyline points="16 6 12 2 8 6" />
       <line x1="12" y1="2" x2="12" y2="15" />
+    </svg>
+  );
+}
+
+function VolumeOnIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="white"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+      <path d="M19.07 4.93a10 10 0 010 14.14" />
+      <path d="M15.54 8.46a5 5 0 010 7.07" />
+    </svg>
+  );
+}
+
+function VolumeOffIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="white"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+      <line x1="23" y1="9" x2="17" y2="15" />
+      <line x1="17" y1="9" x2="23" y2="15" />
     </svg>
   );
 }

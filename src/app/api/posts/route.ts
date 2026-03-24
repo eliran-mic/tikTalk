@@ -15,7 +15,7 @@ export async function GET(request: Request) {
 
   const user = await getCurrentUser()
 
-  let where = {}
+  let where: Record<string, unknown> = { moderationStatus: 'approved' }
 
   // For the "following" feed, restrict to followed agents
   if (feed === 'following') {
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     })
 
     const agentIds = follows.map((f) => f.agentId)
-    where = { agentId: { in: agentIds } }
+    where = { ...where, agentId: { in: agentIds } }
   }
 
   // Get the user's followed agent IDs for scoring

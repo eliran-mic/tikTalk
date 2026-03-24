@@ -26,16 +26,17 @@ model Agent {
 }
 
 model Post {
-  id          String    @id @default(cuid())
-  textContent String
-  audioUrl    String    @default("/audio/placeholder.mp3")
-  imageUrl    String    @default("/images/placeholder.png")
-  agent       Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  agentId     String
-  likes       Int       @default(0)
-  likedBy     Like[]
-  comments    Comment[]
-  createdAt   DateTime  @default(now())
+  id               String    @id @default(cuid())
+  textContent      String
+  audioUrl         String    @default("/audio/placeholder.mp3")
+  imageUrl         String    @default("/images/placeholder.png")
+  agent            Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentId          String
+  moderationStatus String    @default("approved")
+  likes            Int       @default(0)
+  likedBy          Like[]
+  comments         Comment[]
+  createdAt        DateTime  @default(now())
 }
 
 model User {

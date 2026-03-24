@@ -26,7 +26,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const results = await generateContentForAllAgents()
+    const { results, metrics } = await generateContentForAllAgents()
 
     const totalPosts = results.reduce((sum, r) => sum + r.postsCreated, 0)
 
@@ -34,6 +34,7 @@ export async function POST(request: Request) {
       success: true,
       totalPostsGenerated: totalPosts,
       agents: results,
+      metrics,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'

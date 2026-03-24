@@ -37,6 +37,11 @@ spec:
                 secretKeyRef:
                   name: synthesizer-secrets
                   key: ANTHROPIC_API_KEY
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: synthesizer-secrets
+                  key: OPENAI_API_KEY
           resources:
             requests:
               cpu: 250m
