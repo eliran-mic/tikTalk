@@ -60,6 +60,12 @@ vi.mock('next/link', () => ({
   default: ({ children, href }: { children: React.ReactNode; href: string }) => <a href={href}>{children}</a>,
 }))
 
+// Mock next/navigation
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), back: vi.fn() }),
+  usePathname: () => '/',
+}))
+
 // Mock FollowButton
 vi.mock('@/components/ui/FollowButton', () => ({
   default: () => <button data-testid="follow-btn">Follow</button>,

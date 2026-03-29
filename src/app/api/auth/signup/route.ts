@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db'
 import { createSessionToken, storeSession, setSessionCookie } from '@/lib/auth'
 import { applyRateLimit } from '@/lib/rate-limit'
+import { awardXp } from '@/lib/gamification'
 import bcrypt from 'bcryptjs'
 
 export async function POST(request: Request) {
@@ -17,7 +18,7 @@ export async function POST(request: Request) {
     )
   }
 
-  const { username, password } = body as Record<string, unknown>
+  const { username, password, referralCode } = body as Record<string, unknown>
 
   if (!username || !password) {
     return Response.json(
@@ -52,9 +53,32 @@ export async function POST(request: Request) {
     const passwordHash = await bcrypt.hash(password, 10)
 
     const user = await prisma.user.create({
-      data: { username, passwordHash },
+      data: {
+        username,
+        passwordHash,
+        referredBy: typeof referralCode === 'string' ? referralCode : undefined,
+      },
       select: { id: true, username: true, createdAt: true },
     })
+
+    // Process referral if valid code provided
+    if (typeof referralCode === 'string' && referralCode.length > 0) {
+      const referrer = await prisma.user.findUnique({
+        where: { referralCode },
+        select: { id: true },
+      })
+
+      if (referrer) {
+        await prisma.referral.create({
+          data: {
+            referrerId: referrer.id,
+            referredId: user.id,
+          },
+        })
+        // Award referral XP to the referrer
+        await awardXp(referrer.id, 'referral', { referredUserId: user.id })
+      }
+    }
 
     const token = createSessionToken()
     await storeSession(token, user.id)

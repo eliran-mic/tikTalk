@@ -1,13 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useAuth } from '@/components/auth/AuthProvider'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export default function SignupPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-dvh items-center justify-center bg-black"><div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" /></div>}>
+      <SignupForm />
+    </Suspense>
+  )
+}
+
+function SignupForm() {
   const { signup } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const referralCode = searchParams.get('ref') ?? ''
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -17,7 +27,7 @@ export default function SignupPage() {
     e.preventDefault()
     setError('')
     setSubmitting(true)
-    const result = await signup(username, password)
+    const result = await signup(username, password, referralCode)
     setSubmitting(false)
     if (result.error) {
       setError(result.error)
@@ -31,7 +41,10 @@ export default function SignupPage() {
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-white">Create an account</h1>
-          <p className="mt-1 text-sm text-white/50">Join Synthesizer</p>
+          <p className="mt-1 text-sm text-white/50">Join tikTalk</p>
+          {referralCode && (
+            <p className="mt-2 text-xs text-indigo-400">You were invited! +100 XP for your friend</p>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -12,7 +12,7 @@ interface AuthContextValue {
   user: User | null
   loading: boolean
   login: (username: string, password: string) => Promise<{ error?: string }>
-  signup: (username: string, password: string) => Promise<{ error?: string }>
+  signup: (username: string, password: string, referralCode?: string) => Promise<{ error?: string }>
   logout: () => Promise<void>
 }
 
@@ -44,11 +44,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return {}
   }, [])
 
-  const signup = useCallback(async (username: string, password: string) => {
+  const signup = useCallback(async (username: string, password: string, referralCode?: string) => {
     const res = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, password, referralCode }),
     })
     const data = await res.json()
     if (!res.ok) return { error: data.error }

@@ -35,6 +35,13 @@ const BLOCKED_KEYWORDS = [
   'stop taking medication',
   'ignore your doctor',
   'medical advice disclaimer',
+  // Sensitive trending topics
+  'active shooter',
+  'bomb threat',
+  'terror attack',
+  'hostage situation',
+  'graphic violence',
+  'death toll',
 ]
 
 const MIN_WORD_COUNT = 20

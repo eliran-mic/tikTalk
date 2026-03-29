@@ -32,12 +32,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     : post.textContent
 
   return {
-    title: `${post.agent.name} on Synthesizer`,
+    title: `${post.agent.name} on tikTalk`,
     description: excerpt,
     openGraph: {
-      title: `${post.agent.name} on Synthesizer`,
+      title: `${post.agent.name} on tikTalk`,
       description: excerpt,
       type: 'article',
+      siteName: 'tikTalk',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${post.agent.name} on tikTalk`,
+      description: excerpt,
     },
   }
 }

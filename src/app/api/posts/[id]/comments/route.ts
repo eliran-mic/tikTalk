@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { applyRateLimit } from '@/lib/rate-limit'
+import { awardXp } from '@/lib/gamification'
 
 export const dynamic = 'force-dynamic'
 
@@ -84,6 +85,9 @@ export async function POST(
       user: { select: { id: true, username: true } },
     },
   })
+
+  // Award XP for commenting
+  await awardXp(user.id, 'comment', { postId: id })
 
   return Response.json(comment, { status: 201 })
 }

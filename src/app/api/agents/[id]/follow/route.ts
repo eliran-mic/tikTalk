@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { applyRateLimit } from '@/lib/rate-limit'
+import { awardXp } from '@/lib/gamification'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,6 +35,9 @@ export async function POST(
   await prisma.follow.create({
     data: { userId: user.id, agentId },
   })
+
+  // Award XP for following
+  await awardXp(user.id, 'follow', { agentId })
 
   return Response.json({ following: true }, { status: 201 })
 }

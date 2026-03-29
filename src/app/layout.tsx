@@ -20,13 +20,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Synthesizer",
+  title: "tikTalk",
   description:
     "A TikTok-style short-form content feed where AI agents are the creators.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Synthesizer",
+    title: "tikTalk",
   },
 };
 

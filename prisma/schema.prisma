@@ -14,13 +14,18 @@ datasource db {
 
 model Agent {
   id              String           @id @default(cuid())
-  name            String
+  name            String           @unique
   bio             String
   avatarUrl       String           @default("/avatars/default.png")
   systemPrompt    String
+  category        String           @default("philosophy")
+  domain          String           @default("stoic")
   posts           Post[]
   generatedTopics GeneratedTopic[]
   followers       Follow[]
+  agentTrends     AgentTrend[]
+  challenges      DailyChallenge[]
+  conversations   Conversation[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 }
@@ -33,6 +38,9 @@ model Post {
   agent            Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
   agentId          String
   moderationStatus String    @default("approved")
+  sourceType       String    @default("static")
+  trend            Trend?    @relation(fields: [trendId], references: [id])
+  trendId          String?
   likes            Int       @default(0)
   likedBy          Like[]
   comments         Comment[]
@@ -40,14 +48,26 @@ model Post {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  username     String    @unique
-  passwordHash String
-  comments     Comment[]
-  following    Follow[]
-  likes        Like[]
-  sessions     Session[]
-  createdAt    DateTime  @default(now())
+  id              String            @id @default(cuid())
+  username        String            @unique
+  passwordHash    String
+  referralCode    String            @unique @default(cuid())
+  referredBy      String?
+  xp              Int               @default(0)
+  level           Int               @default(1)
+  currentStreak   Int               @default(0)
+  longestStreak   Int               @default(0)
+  lastActiveDate  DateTime?
+  comments        Comment[]
+  following       Follow[]
+  likes           Like[]
+  sessions        Session[]
+  xpEvents        XpEvent[]
+  challengeEntries ChallengeEntry[]
+  referrals       Referral[]        @relation("referrer")
+  referredByRef   Referral?         @relation("referred")
+  conversations   Conversation[]
+  createdAt       DateTime          @default(now())
 }
 
 model Session {
@@ -99,4 +119,164 @@ model GeneratedTopic {
   createdAt DateTime @default(now())
 
   @@unique([agentId, topic])
+}
+
+model TrendSource {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  type        String
+  enabled     Boolean   @default(true)
+  lastFetchAt DateTime?
+  lastError   String?
+  config      Json?
+  trends      Trend[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Trend {
+  id              String       @id @default(cuid())
+  externalId      String
+  title           String
+  normalizedTitle String
+  description     String?
+  url             String?
+  source          TrendSource  @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  sourceId        String
+  category        String       @default("general")
+  viralityScore   Float        @default(0)
+  velocity        Float        @default(0)
+  magnitude       Float        @default(0)
+  crossPlatform   Int          @default(1)
+  firstSeenAt     DateTime     @default(now())
+  lastSeenAt      DateTime     @default(now())
+  expiresAt       DateTime?
+  status          String       @default("active")
+  agentTrends     AgentTrend[]
+  posts           Post[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@unique([sourceId, externalId])
+  @@index([status, viralityScore])
+  @@index([category, status])
+  @@index([normalizedTitle])
+}
+
+model AgentTrend {
+  id          String    @id @default(cuid())
+  agent       Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentId     String
+  trend       Trend     @relation(fields: [trendId], references: [id], onDelete: Cascade)
+  trendId     String
+  relevance   Float     @default(0)
+  status      String    @default("pending")
+  generatedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([agentId, trendId])
+}
+
+// ── Gamification ────────────────────────────────────────────────────
+
+model XpEvent {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  action    String   // like, comment, listen, streak, challenge, referral
+  xp        Int
+  metadata  Json?    // optional context (postId, challengeId, etc.)
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// ── Daily Challenges ────────────────────────────────────────────────
+
+model DailyChallenge {
+  id          String           @id @default(cuid())
+  date        DateTime         @unique // one challenge per day
+  title       String
+  description String
+  agentId     String
+  agent       Agent            @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  xpReward    Int              @default(50)
+  entries     ChallengeEntry[]
+  createdAt   DateTime         @default(now())
+}
+
+model ChallengeEntry {
+  id          String         @id @default(cuid())
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  challenge   DailyChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  challengeId String
+  response    String         // user's text response
+  completed   Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+
+  @@unique([userId, challengeId])
+}
+
+// ── Referrals ───────────────────────────────────────────────────────
+
+model Referral {
+  id          String   @id @default(cuid())
+  referrer    User     @relation("referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referrerId  String
+  referred    User     @relation("referred", fields: [referredId], references: [id], onDelete: Cascade)
+  referredId  String   @unique
+  xpAwarded   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+// ── Conversations (1-on-1 AI Chat) ──────────────────────────────────
+
+model Conversation {
+  id        String    @id @default(cuid())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  agent     Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentId   String
+  title     String    @default("New conversation")
+  messages  Message[]
+  updatedAt DateTime  @updatedAt
+  createdAt DateTime  @default(now())
+
+  @@unique([userId, agentId])
+  @@index([userId, updatedAt])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+  role           String       // "user" or "assistant"
+  content        String
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+// ── Collections (Saved Posts) ───────────────────────────────────────
+
+model Collection {
+  id        String           @id @default(cuid())
+  name      String
+  userId    String
+  items     CollectionItem[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([userId, updatedAt])
+}
+
+model CollectionItem {
+  id           String     @id @default(cuid())
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  collectionId String
+  postId       String
+  createdAt    DateTime   @default(now())
+
+  @@unique([collectionId, postId])
 }

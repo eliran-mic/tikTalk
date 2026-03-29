@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, type PanInfo } from 'framer-motion';
 import { haptics } from '@/lib/haptics';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import AgentAvatar from '@/components/ui/AgentAvatar';
 import FollowButton from '@/components/ui/FollowButton';
 import useTextToSpeech from '@/hooks/useTextToSpeech';
@@ -23,6 +24,8 @@ interface Post {
   imageUrl: string;
   agent: Agent;
   agentId: string;
+  sourceType?: string;
+  trend?: { id: string; title: string } | null;
   likes: number;
   liked?: boolean;
   createdAt: string;
@@ -36,12 +39,15 @@ interface PostCardProps {
 }
 
 export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
+  const router = useRouter();
   const [likes, setLikes] = useState(post.likes);
   const [liked, setLiked] = useState(post.liked ?? false);
   const [showBurst, setShowBurst] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentCount, setCommentCount] = useState(post._count?.comments ?? 0);
   const [showCopied, setShowCopied] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   // Swipe gesture state
   const dragX = useMotionValue(0);
@@ -93,6 +99,11 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
 
   async function handleShare() {
     haptics.mediumTap();
+    setShowShareMenu(true);
+  }
+
+  async function handleShareLink() {
+    setShowShareMenu(false);
     const url = `${window.location.origin}/post/${post.id}`;
     const excerpt = post.textContent.length > 100
       ? post.textContent.slice(0, 97) + '...'
@@ -100,7 +111,7 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
 
     if (navigator.share) {
       try {
-        await navigator.share({ title: `${post.agent.name} on Synthesizer`, text: excerpt, url });
+        await navigator.share({ title: `${post.agent.name} on tikTalk`, text: excerpt, url });
         return;
       } catch {
         // User cancelled or share failed — fall through to clipboard
@@ -113,6 +124,40 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
       setTimeout(() => setShowCopied(false), 2000);
     } catch {
       // Clipboard API not available
+    }
+  }
+
+  async function handleShareCard() {
+    setShowShareMenu(false);
+    haptics.mediumTap();
+    const cardUrl = `/api/share/${post.id}`;
+
+    try {
+      // Fetch the card image as a blob
+      const res = await fetch(cardUrl);
+      const blob = await res.blob();
+      const file = new File([blob], `tiktalk-${post.id}.png`, { type: 'image/png' });
+
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          title: `${post.agent.name} on tikTalk`,
+          files: [file],
+        });
+        haptics.success();
+        return;
+      }
+
+      // Fallback: download the image
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `tiktalk-${post.id}.png`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      setShowCopied(true);
+      setTimeout(() => setShowCopied(false), 2000);
+    } catch {
+      // Fallback: open card in new tab
+      window.open(cardUrl, '_blank');
     }
   }
 
@@ -253,6 +298,14 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
           </Link>
           <FollowButton agentId={post.agent.id} size="sm" />
         </div>
+        {post.sourceType === 'trend' && post.trend && (
+          <div className="mt-2 flex items-center gap-1.5 rounded-full bg-orange-500/15 border border-orange-500/20 px-2.5 py-1 w-fit">
+            <FireIcon />
+            <span className="text-xs text-orange-300 truncate max-w-[200px]">
+              {post.trend.title}
+            </span>
+          </div>
+        )}
       </motion.div>
 
       {/* Right-side action bar */}
@@ -302,10 +355,38 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
           <span className="text-xs text-white/80">{commentCount}</span>
         </button>
 
+        {/* Chat button */}
+        <button
+          onClick={() => router.push(`/chat/${post.agent.id}`)}
+          className="flex flex-col items-center gap-1"
+          aria-label="Chat"
+        >
+          <ChatIcon />
+          <span className="text-xs text-white/80">Chat</span>
+        </button>
+
         {/* Share button */}
         <button onClick={handleShare} className="flex flex-col items-center gap-1" aria-label="Share">
           <ShareIcon />
           <span className="text-xs text-white/80">Share</span>
+        </button>
+
+        {/* Save/Bookmark button */}
+        <button
+          onClick={async () => {
+            haptics.lightTap();
+            setSaved(!saved);
+            try {
+              await fetch(`/api/posts/${post.id}/save`, { method: 'POST' });
+            } catch {
+              setSaved(saved);
+            }
+          }}
+          className="flex flex-col items-center gap-1"
+          aria-label={saved ? 'Unsave' : 'Save'}
+        >
+          <BookmarkIcon filled={saved} />
+          <span className="text-xs text-white/80">{saved ? 'Saved' : 'Save'}</span>
         </button>
       </motion.div>
 
@@ -317,7 +398,58 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
         onCountChange={setCommentCount}
       />
 
-      {/* Copied toast */}
+      {/* Share menu */}
+      <AnimatePresence>
+        {showShareMenu && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/60"
+              onClick={() => setShowShareMenu(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 60 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 60 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-zinc-900 border-t border-white/10 px-6 py-6 pb-10"
+            >
+              <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
+              <h3 className="text-lg font-bold text-white mb-4">Share</h3>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleShareCard}
+                  className="flex items-center gap-4 rounded-xl bg-white/10 px-4 py-3 text-left transition-colors hover:bg-white/15"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-500/20">
+                    <CardIcon />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-white">Share as Card</div>
+                    <div className="text-xs text-white/50">Beautiful branded image for social media</div>
+                  </div>
+                </button>
+                <button
+                  onClick={handleShareLink}
+                  className="flex items-center gap-4 rounded-xl bg-white/10 px-4 py-3 text-left transition-colors hover:bg-white/15"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
+                    <LinkIcon />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-white">Share Link</div>
+                    <div className="text-xs text-white/50">Copy link or share via apps</div>
+                  </div>
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Toast notification */}
       <AnimatePresence>
         {showCopied && (
           <motion.div
@@ -326,7 +458,7 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
             exit={{ opacity: 0, y: 20 }}
             className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50 rounded-full bg-white/15 backdrop-blur-md px-4 py-2 text-sm text-white"
           >
-            Copied!
+            Saved!
           </motion.div>
         )}
       </AnimatePresence>
@@ -335,6 +467,14 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
 }
 
 /* ---- Icon components ---- */
+
+function FireIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fb923c" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z" />
+    </svg>
+  );
+}
 
 function HeartIcon({ filled = false }: { filled?: boolean }) {
   return (
@@ -423,6 +563,44 @@ function VolumeOffIcon() {
       <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
       <line x1="23" y1="9" x2="17" y2="15" />
       <line x1="17" y1="9" x2="23" y2="15" />
+    </svg>
+  );
+}
+
+function BookmarkIcon({ filled = false }: { filled?: boolean }) {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill={filled ? 'white' : 'none'} stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
+    </svg>
+  );
+}
+
+function ChatIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+      <circle cx="9" cy="10" r="0.5" fill="white" />
+      <circle cx="12" cy="10" r="0.5" fill="white" />
+      <circle cx="15" cy="10" r="0.5" fill="white" />
+    </svg>
+  );
+}
+
+function CardIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+      <line x1="3" y1="9" x2="21" y2="9" />
+      <line x1="9" y1="21" x2="9" y2="9" />
+    </svg>
+  );
+}
+
+function LinkIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
     </svg>
   );
 }

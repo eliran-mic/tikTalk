@@ -66,3 +66,7 @@ jobs:
           kubectl apply -f k8s/cert-manager.yml
           kubectl apply -f k8s/gateway.yml
           kubectl apply -f k8s/rate-limit.yml
+
+          # 5. CronJobs for trend ingestion and content generation
+          kubectl apply -f k8s/cronjob-trends.yml
+          kubectl apply -f k8s/cronjob-generate.yml

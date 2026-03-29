@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { applyRateLimit } from '@/lib/rate-limit'
+import { awardXp } from '@/lib/gamification'
 
 export async function POST(
   request: Request,
@@ -43,6 +44,9 @@ export async function POST(
         data: { likes: { increment: 1 } },
       }),
     ])
+
+    // Award XP for liking
+    await awardXp(user.id, 'like', { postId: id })
 
     const post = await prisma.post.findUnique({ where: { id } })
     return Response.json({ ...post, liked: true })

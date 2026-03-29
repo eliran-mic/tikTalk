@@ -8,6 +8,8 @@ export interface GenerationMetrics {
   totalSucceeded: number
   totalFailed: number
   totalFallbackToMock: number
+  totalTrendBased: number
+  totalStaticBased: number
   agentMetrics: Record<
     string,
     {
@@ -24,6 +26,8 @@ export function createGenerationLogger(): {
   logSuccess: (agentName: string) => void
   logFailure: (agentName: string, error: string) => void
   logFallback: (agentName: string, reason: string) => void
+  logTrendBased: () => void
+  logStaticBased: () => void
   getMetrics: () => GenerationMetrics
 } {
   const metrics: GenerationMetrics = {
@@ -31,6 +35,8 @@ export function createGenerationLogger(): {
     totalSucceeded: 0,
     totalFailed: 0,
     totalFallbackToMock: 0,
+    totalTrendBased: 0,
+    totalStaticBased: 0,
     agentMetrics: {},
   }
 
@@ -98,6 +104,14 @@ export function createGenerationLogger(): {
           timestamp: new Date().toISOString(),
         })
       )
+    },
+
+    logTrendBased() {
+      metrics.totalTrendBased++
+    },
+
+    logStaticBased() {
+      metrics.totalStaticBased++
     },
 
     getMetrics() {

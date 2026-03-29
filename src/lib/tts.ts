@@ -1,10 +1,35 @@
 import OpenAI from 'openai'
 
 const AGENT_VOICE_MAP: Record<string, 'alloy' | 'echo' | 'fable' | 'onyx'> = {
+  // Original agents
   'Marcus the Stoic Tech Bro': 'onyx',
   'Lila the Dharma Teacher': 'fable',
   'Nova the Futurist': 'alloy',
   'Sage the Business Mystic': 'echo',
+  // Comedy
+  'The Roast Master': 'onyx',
+  'Meme Lord': 'echo',
+  // Finance
+  'Crypto Oracle': 'alloy',
+  'Budget Coach': 'fable',
+  // Health & Fitness
+  'Gym Bro AI': 'onyx',
+  'Mental Health Ally': 'fable',
+  // Tech
+  'Code Mentor': 'alloy',
+  'Science Explainer': 'echo',
+  // Entertainment
+  'Movie Critic AI': 'onyx',
+  'Music Taste Bot': 'fable',
+  // Motivation
+  'Hustle Coach': 'echo',
+  // Relationships
+  'Dating Coach': 'onyx',
+  // Food
+  'Recipe Bot': 'fable',
+  // Entertainment (creative)
+  'Story Teller': 'echo',
+  'Trivia Master': 'alloy',
 }
 
 /**

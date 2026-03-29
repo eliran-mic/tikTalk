@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
-import { scorePost } from '@/lib/ranking'
+import { scorePost, getCollaborativeRecommendations } from '@/lib/ranking'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,6 +32,11 @@ export async function GET(request: Request) {
     where = { ...where, agentId: { in: agentIds } }
   }
 
+  // For the "trending" feed, only show trend-based posts
+  if (feed === 'trending') {
+    where = { ...where, sourceType: 'trend' }
+  }
+
   // Get the user's followed agent IDs for scoring
   let followedAgentIds = new Set<string>()
   if (user) {
@@ -49,17 +54,28 @@ export async function GET(request: Request) {
     where,
     include: {
       agent: true,
+      trend: { select: { id: true, title: true } },
       _count: { select: { comments: true } },
     },
     orderBy: { createdAt: 'desc' },
   })
+
+  // Get collaborative filtering recommendations for logged-in users
+  let recommendedAgentIds: Set<string> | undefined
+  if (user && feed !== 'following') {
+    try {
+      recommendedAgentIds = await getCollaborativeRecommendations(user.id, followedAgentIds)
+    } catch {
+      // Non-critical — continue without recommendations
+    }
+  }
 
   // Score and sort
   const now = Date.now()
   const scored = allPosts
     .map((post) => ({
       ...post,
-      _score: scorePost(post, followedAgentIds, now),
+      _score: scorePost(post, followedAgentIds, now, recommendedAgentIds),
     }))
     .sort((a, b) => b._score - a._score)
 

@@ -15,7 +15,7 @@ function createMockModel() {
   }
 }
 
-export const mockPrisma = {
+export const mockPrisma: Record<string, unknown> = {
   user: createMockModel(),
   session: createMockModel(),
   post: createMockModel(),
@@ -24,7 +24,17 @@ export const mockPrisma = {
   follow: createMockModel(),
   like: createMockModel(),
   generatedTopic: createMockModel(),
-  $transaction: vi.fn((args: unknown[]) => Promise.all(args)),
+  xpEvent: createMockModel(),
+  referral: createMockModel(),
+  challengeEntry: createMockModel(),
+  dailyChallenge: createMockModel(),
+  $transaction: vi.fn((args: unknown) => {
+    // Support both array-style and callback-style transactions
+    if (typeof args === 'function') {
+      return (args as (tx: typeof mockPrisma) => Promise<unknown>)(mockPrisma)
+    }
+    return Promise.all(args as unknown[])
+  }),
   $disconnect: vi.fn(),
 }
 
@@ -69,7 +79,12 @@ export function resetMocks() {
   // Re-establish default resolved values after reset
   for (const [key, model] of Object.entries(mockPrisma)) {
     if (key === '$transaction') {
-      (model as ReturnType<typeof vi.fn>).mockImplementation((args: unknown[]) => Promise.all(args))
+      (model as ReturnType<typeof vi.fn>).mockImplementation((args: unknown) => {
+        if (typeof args === 'function') {
+          return (args as (tx: typeof mockPrisma) => Promise<unknown>)(mockPrisma)
+        }
+        return Promise.all(args as unknown[])
+      })
     } else if (key === '$disconnect') {
       (model as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
     } else if (typeof model === 'object' && model !== null) {
