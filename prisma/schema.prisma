@@ -73,6 +73,8 @@ model User {
   referrals       Referral[]        @relation("referrer")
   referredByRef   Referral?         @relation("referred")
   conversations   Conversation[]
+  pushSubscriptions PushSubscription[]
+  subscription    Subscription?
   createdAt       DateTime          @default(now())
 }
 
@@ -285,4 +287,70 @@ model CollectionItem {
   createdAt    DateTime   @default(now())
 
   @@unique([collectionId, postId])
+}
+
+// ── Push Notifications ──────────────────────────────────────────────
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ── Leaderboard (materialized for performance) ──────────────────────
+
+model LeaderboardEntry {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  username  String
+  xp        Int      @default(0)
+  level     Int      @default(1)
+  streak    Int      @default(0)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@index([xp])
+}
+
+// ── Subscriptions (Agentra Pro) ─────────────────────────────────────
+
+model Subscription {
+  id                 String    @id @default(cuid())
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId             String    @unique
+  plan               String    @default("pro") // "pro"
+  status             String    @default("active") // "active", "cancelled", "expired"
+  stripeCustomerId   String?
+  stripeSubscriptionId String?
+  currentPeriodStart DateTime  @default(now())
+  currentPeriodEnd   DateTime
+  cancelledAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+// ── Creator Marketplace ─────────────────────────────────────────────
+
+model CustomAgent {
+  id           String   @id @default(cuid())
+  creatorId    String
+  name         String
+  bio          String
+  avatarUrl    String   @default("/avatars/default.png")
+  systemPrompt String
+  category     String
+  domain       String
+  status       String   @default("pending") // "pending", "approved", "rejected"
+  isPublic     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([creatorId])
+  @@index([status])
 }
