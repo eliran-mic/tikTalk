@@ -12,5 +12,5 @@ spec:
       - http01:
           gatewayHTTPRoute:
             parentRefs:
-              - name: synthesizer-gateway
+              - name: agentra-gateway
                 namespace: default

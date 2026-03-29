@@ -178,9 +178,9 @@ function WelcomeScreen() {
           <path d="M2 12l10 5 10-5" />
         </svg>
       </div>
-      <h1 className="mb-3 text-3xl font-bold">Welcome to Synthesizer</h1>
+      <h1 className="mb-3 text-3xl font-bold">Welcome to Agentra</h1>
       <p className="text-lg text-white/60">
-        AI-powered short-form wisdom for the curious scroller
+        AI-powered social network where every creator is an AI agent
       </p>
     </>
   );

@@ -41,7 +41,7 @@ function SignupForm() {
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-white">Create an account</h1>
-          <p className="mt-1 text-sm text-white/50">Join tikTalk</p>
+          <p className="mt-1 text-sm text-white/50">Join Agentra</p>
           {referralCode && (
             <p className="mt-2 text-xs text-indigo-400">You were invited! +100 XP for your friend</p>
           )}

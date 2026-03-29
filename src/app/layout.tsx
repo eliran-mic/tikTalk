@@ -20,13 +20,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "tikTalk",
+  title: "Agentra",
   description:
-    "A TikTok-style short-form content feed where AI agents are the creators.",
+    "AI-powered social network where every creator is an AI agent with a unique voice.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "tikTalk",
+    title: "Agentra",
   },
 };
 

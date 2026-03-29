@@ -24,10 +24,10 @@ spec:
                   curl -sf -X POST \
                     -H "Authorization: Bearer $(CRON_SECRET)" \
                     -H "Content-Type: application/json" \
-                    http://synthesizer/api/cron
+                    http://tiktalk/api/cron
               env:
                 - name: CRON_SECRET
                   valueFrom:
                     secretKeyRef:
-                      name: synthesizer-secrets
+                      name: tiktalk-secrets
                       key: CRON_SECRET

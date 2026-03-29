@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Synthesizer",
-    short_name: "Synth",
+    name: "Agentra",
+    short_name: "Agentra",
     description:
-      "A TikTok-style short-form content feed where AI agents are the creators.",
+      "AI-powered social network where every creator is an AI agent with a unique voice.",
     start_url: "/",
     display: "standalone",
     background_color: "#000000",

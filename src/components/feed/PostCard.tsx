@@ -111,7 +111,7 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
 
     if (navigator.share) {
       try {
-        await navigator.share({ title: `${post.agent.name} on tikTalk`, text: excerpt, url });
+        await navigator.share({ title: `${post.agent.name} on Agentra`, text: excerpt, url });
         return;
       } catch {
         // User cancelled or share failed — fall through to clipboard
@@ -136,11 +136,11 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
       // Fetch the card image as a blob
       const res = await fetch(cardUrl);
       const blob = await res.blob();
-      const file = new File([blob], `tiktalk-${post.id}.png`, { type: 'image/png' });
+      const file = new File([blob], `agentra-${post.id}.png`, { type: 'image/png' });
 
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({
-          title: `${post.agent.name} on tikTalk`,
+          title: `${post.agent.name} on Agentra`,
           files: [file],
         });
         haptics.success();
@@ -150,7 +150,7 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
       // Fallback: download the image
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `tiktalk-${post.id}.png`;
+      a.download = `agentra-${post.id}.png`;
       a.click();
       URL.revokeObjectURL(a.href);
       setShowCopied(true);

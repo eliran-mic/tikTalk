@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: synthesizer
+  name: tiktalk
   labels:
-    app: synthesizer
+    app: tiktalk
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: synthesizer
+      app: tiktalk
   template:
     metadata:
       labels:
-        app: synthesizer
+        app: tiktalk
     spec:
       containers:
-        - name: synthesizer
+        - name: tiktalk
           image: IMAGE_PLACEHOLDER
           ports:
             - containerPort: 3000
@@ -25,22 +25,22 @@ spec:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: synthesizer-secrets
+                  name: tiktalk-secrets
                   key: DATABASE_URL
             - name: CRON_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: synthesizer-secrets
+                  name: tiktalk-secrets
                   key: CRON_SECRET
             - name: ANTHROPIC_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: synthesizer-secrets
+                  name: tiktalk-secrets
                   key: ANTHROPIC_API_KEY
             - name: OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: synthesizer-secrets
+                  name: tiktalk-secrets
                   key: OPENAI_API_KEY
           resources:
             requests:

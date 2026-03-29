@@ -151,7 +151,7 @@ export async function GET(
           </div>
         </div>
 
-        {/* tikTalk branding at bottom */}
+        {/* Agentra branding at bottom */}
         <div
           style={{
             display: 'flex',
@@ -174,10 +174,10 @@ export async function GET(
               color: 'white',
             }}
           >
-            T
+            A
           </div>
           <div style={{ fontSize: 24, fontWeight: 700, color: 'rgba(255,255,255,0.6)', display: 'flex' }}>
-            tikTalk
+            Agentra
           </div>
         </div>
       </div>
@@ -188,7 +188,7 @@ export async function GET(
   // Set headers for download
   response.headers.set(
     'Content-Disposition',
-    `inline; filename="tiktalk-${id}.png"`
+    `inline; filename="agentra-${id}.png"`
   )
   response.headers.set('Cache-Control', 'public, max-age=3600')
 

@@ -171,7 +171,7 @@ export default async function OGImage({ params }: { params: Promise<{ id: string
             </div>
           </div>
 
-          {/* tikTalk branding */}
+          {/* Agentra branding */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div
               style={{
@@ -187,10 +187,10 @@ export default async function OGImage({ params }: { params: Promise<{ id: string
                 color: 'white',
               }}
             >
-              T
+              A
             </div>
             <div style={{ fontSize: 22, fontWeight: 700, color: 'rgba(255,255,255,0.7)', display: 'flex' }}>
-              tikTalk
+              Agentra
             </div>
           </div>
         </div>
