@@ -42,6 +42,41 @@ spec:
                 secretKeyRef:
                   name: tiktalk-secrets
                   key: OPENAI_API_KEY
+            - name: NEXT_PUBLIC_APP_URL
+              valueFrom:
+                secretKeyRef:
+                  name: tiktalk-secrets
+                  key: NEXT_PUBLIC_APP_URL
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tiktalk-secrets
+                  key: GOOGLE_CLIENT_ID
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: tiktalk-secrets
+                  key: GOOGLE_CLIENT_SECRET
+            - name: FACEBOOK_APP_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tiktalk-secrets
+                  key: FACEBOOK_APP_ID
+            - name: FACEBOOK_APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: tiktalk-secrets
+                  key: FACEBOOK_APP_SECRET
+            - name: LINKEDIN_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tiktalk-secrets
+                  key: LINKEDIN_CLIENT_ID
+            - name: LINKEDIN_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: tiktalk-secrets
+                  key: LINKEDIN_CLIENT_SECRET
           resources:
             requests:
               cpu: 250m

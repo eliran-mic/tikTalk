@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react'
 import { useAuth } from '@/components/auth/AuthProvider'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
+import SocialLoginButtons from '@/components/auth/SocialLoginButtons'
 
 export default function SignupPage() {
   return (
@@ -45,6 +46,17 @@ function SignupForm() {
           {referralCode && (
             <p className="mt-2 text-xs text-indigo-400">You were invited! +100 XP for your friend</p>
           )}
+        </div>
+
+        <SocialLoginButtons />
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-white/10" />
+          </div>
+          <div className="relative flex justify-center text-xs">
+            <span className="bg-black px-2 text-white/30">or</span>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

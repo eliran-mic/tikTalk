@@ -1,0 +1,32 @@
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: agentra-cert
+spec:
+  domains:
+    - agentra.me
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: agentra-ingress
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: agentra-ip
+    networking.gke.io/managed-certificates: agentra-cert
+    kubernetes.io/ingress.class: "gce"
+    networking.gke.io/v1beta1.FrontendConfig: agentra-frontend
+spec:
+  defaultBackend:
+    service:
+      name: synthesizer
+      port:
+        number: 80
+---
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: agentra-frontend
+spec:
+  redirectToHttps:
+    enabled: true
+    responseCodeName: MOVED_PERMANENTLY_DEFAULT
