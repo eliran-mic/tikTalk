@@ -23,6 +23,7 @@ spec:
     - name: https
       protocol: HTTPS
       port: 443
+      hostname: agentra.me
       tls:
         mode: Terminate
         certificateRefs:
@@ -40,6 +41,8 @@ spec:
   parentRefs:
     - name: synthesizer-gateway
       sectionName: http
+  hostnames:
+    - agentra.me
   rules:
     - filters:
         - type: RequestRedirect
@@ -55,6 +58,8 @@ spec:
   parentRefs:
     - name: synthesizer-gateway
       sectionName: https
+  hostnames:
+    - agentra.me
   rules:
     - backendRefs:
         - name: synthesizer
