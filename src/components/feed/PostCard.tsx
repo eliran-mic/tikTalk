@@ -15,6 +15,28 @@ interface Agent {
   name: string;
   bio: string;
   avatarUrl: string;
+  category?: string;
+}
+
+// Category-specific visual themes
+const CATEGORY_THEMES: Record<string, { bg: string; accent: string; glow: string; emoji: string }> = {
+  philosophy: { bg: 'from-indigo-950 via-slate-950 to-violet-950', accent: 'text-indigo-400', glow: 'rgba(99,102,241,0.12)', emoji: '🏛' },
+  comedy: { bg: 'from-orange-950 via-stone-950 to-amber-950', accent: 'text-orange-400', glow: 'rgba(251,146,60,0.12)', emoji: '😂' },
+  finance: { bg: 'from-emerald-950 via-stone-950 to-green-950', accent: 'text-emerald-400', glow: 'rgba(52,211,153,0.12)', emoji: '💰' },
+  fitness: { bg: 'from-red-950 via-stone-950 to-rose-950', accent: 'text-red-400', glow: 'rgba(248,113,113,0.12)', emoji: '💪' },
+  health: { bg: 'from-sky-950 via-slate-950 to-cyan-950', accent: 'text-sky-400', glow: 'rgba(56,189,248,0.12)', emoji: '🧠' },
+  tech: { bg: 'from-blue-950 via-slate-950 to-cyan-950', accent: 'text-blue-400', glow: 'rgba(96,165,250,0.12)', emoji: '💻' },
+  science: { bg: 'from-violet-950 via-slate-950 to-purple-950', accent: 'text-violet-400', glow: 'rgba(167,139,250,0.12)', emoji: '🔬' },
+  entertainment: { bg: 'from-purple-950 via-slate-950 to-fuchsia-950', accent: 'text-purple-400', glow: 'rgba(192,132,252,0.12)', emoji: '🎬' },
+  business: { bg: 'from-amber-950 via-stone-950 to-yellow-950', accent: 'text-amber-400', glow: 'rgba(251,191,36,0.12)', emoji: '🚀' },
+  motivation: { bg: 'from-blue-950 via-slate-950 to-indigo-950', accent: 'text-blue-400', glow: 'rgba(96,165,250,0.12)', emoji: '⚡' },
+  relationships: { bg: 'from-pink-950 via-stone-950 to-rose-950', accent: 'text-pink-400', glow: 'rgba(244,114,182,0.12)', emoji: '💕' },
+  food: { bg: 'from-yellow-950 via-stone-950 to-orange-950', accent: 'text-yellow-400', glow: 'rgba(250,204,21,0.12)', emoji: '🍳' },
+  education: { bg: 'from-teal-950 via-slate-950 to-cyan-950', accent: 'text-teal-400', glow: 'rgba(45,212,191,0.12)', emoji: '📚' },
+};
+
+function getTheme(category?: string) {
+  return CATEGORY_THEMES[category ?? ''] ?? CATEGORY_THEMES.philosophy;
 }
 
 interface Post {
@@ -161,16 +183,29 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
     }
   }
 
+  const theme = getTheme(post.agent.category);
+
   return (
     <div
       className="relative w-full flex-shrink-0 flex items-center justify-center overflow-hidden"
       style={{ height: '100dvh', scrollSnapAlign: 'start' }}
     >
-      {/* Dark gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-zinc-950 via-black to-zinc-950" />
+      {/* Category-themed gradient background */}
+      <div className={`absolute inset-0 bg-gradient-to-b ${theme.bg}`} />
 
-      {/* Subtle radial accent */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(99,102,241,0.08)_0%,transparent_70%)]" />
+      {/* Category-colored radial glow */}
+      <div
+        className="absolute inset-0"
+        style={{ background: `radial-gradient(ellipse at center, ${theme.glow} 0%, transparent 70%)` }}
+      />
+
+      {/* Category badge */}
+      <div className="absolute top-14 left-4 z-20">
+        <span className={`inline-flex items-center gap-1.5 rounded-full bg-white/5 backdrop-blur-md border border-white/10 px-3 py-1 text-xs font-medium ${theme.accent}`}>
+          <span>{theme.emoji}</span>
+          <span className="capitalize">{post.agent.category ?? 'philosophy'}</span>
+        </span>
+      </div>
 
       {/* Swipe heart overlay */}
       <motion.div
@@ -195,7 +230,11 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
         transition={{ duration: 0.5, ease: 'easeOut' }}
         className="relative z-10 mx-auto max-w-sm px-8 pb-36 cursor-grab active:cursor-grabbing"
       >
-        <p className="text-lg leading-relaxed font-medium text-white/90 line-clamp-[10] md:text-xl">
+        {/* Opening quote accent */}
+        <span className={`block text-3xl mb-2 opacity-40 ${theme.accent}`}>&ldquo;</span>
+        <p className={`leading-relaxed font-medium text-white/90 line-clamp-[12] ${
+          post.textContent.length > 400 ? 'text-[15px]' : post.textContent.length > 200 ? 'text-base' : 'text-lg md:text-xl'
+        }`}>
           {post.textContent}
         </p>
       </motion.div>
@@ -288,10 +327,10 @@ export default function PostCard({ post, isActive, onPlay }: PostCardProps) {
           <Link href={`/agent/${post.agent.id}`} className="flex items-end gap-3">
             <AgentAvatar name={post.agent.name} size={44} />
             <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-bold text-white hover:underline">
+              <span className={`text-sm font-bold hover:underline ${theme.accent}`}>
                 @{post.agent.name.toLowerCase().replace(/\s+/g, '')}
               </span>
-              <span className="text-xs text-white/60 line-clamp-2">
+              <span className="text-xs text-white/50 line-clamp-2">
                 {post.agent.bio}
               </span>
             </div>
